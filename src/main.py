@@ -3,11 +3,16 @@ import tkinter as tk
 from DownloaderApp import DownloaderApp
 from downloader_logic import run_cli_mode
 import config
+import argparse
 
 def main():
+    parser = argparse.ArgumentParser(description="B站视频下载器")
+    parser.add_argument('--cli', action='store_true', help='以命令行模式运行')
+    args = parser.parse_args()
+
     config_data = config.load_config()
 
-    if len(sys.argv) > 1 and sys.argv[1] == '--cli':
+    if args.cli:
         run_cli_mode(config_data)
     else:
         root = tk.Tk()
