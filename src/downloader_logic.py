@@ -1,6 +1,11 @@
-import yt_dlp
 import os
-import re
+import sys
+from yt_dlp import YoutubeDL
+
+def run_cli_mode(config):
+    downloader = Downloader(config['download_path'])
+    urls = input("请输入视频链接，每行一个URL，输入完成后按回车：\n").strip().split('\n')
+    downloader.download_videos(urls)
 
 class Downloader:
     def __init__(self, download_path, download_type='audio', progress_callback=None):
@@ -8,53 +13,51 @@ class Downloader:
         self.download_type = download_type
         self.progress_callback = progress_callback
 
-    def process_url(self, url):
-        match = re.match(r'(https?://(?:www\.)?bilibili\.com/video/[A-Za-z0-9]+)', url)
-        if match:
-            return match.group(1)
-        return url
+    def download_videos(self, urls):
+        if not urls:
+            return
 
-    def download_video(self, url, download_type):
+        # 获取 ffmpeg 路径
+        if getattr(sys, 'frozen', False):
+            # 如果是打包后的应用
+            base_path = sys._MEIPASS
+        else:
+            # 如果是开发环境
+            base_path = os.path.abspath(".")
+
+        ffmpeg_location = os.path.join(base_path, 'ffmpeg')
+        
+        # 配置下载选项
         ydl_opts = {
-            'outtmpl': f"{self.download_path}/%(title)s.%(ext)s",
-            'progress_hooks': [self.progress_hook],
+            'format': 'bestaudio/best' if self.download_type == 'audio' else 'best',
+            'paths': {'home': self.download_path},
+            'ffmpeg_location': base_path,  # 设置 ffmpeg 路径
+            'progress_hooks': [self.progress_hook] if self.progress_callback else None,
         }
 
-        if download_type == 'audio':
-            ydl_opts['format'] = 'bestaudio/best'
-            ydl_opts['postprocessors'] = [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }]
-        elif download_type == 'video':
-            ydl_opts['format'] = 'bestvideo+bestaudio/best'
+        # 根据下载类型设置后处理器
+        if self.download_type == 'audio':
+            ydl_opts.update({
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                }],
+            })
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            ydl.download([url])
-
-    def download_videos(self, urls):
-        for url in urls:
-            processed_url = self.process_url(url)
-            if self.download_type == 'both':
-                self.download_video(processed_url, 'audio')
-                self.download_video(processed_url, 'video')
-            else:
-                self.download_video(processed_url, self.download_type)
+        # 开始下载
+        with YoutubeDL(ydl_opts) as ydl:
+            for url in urls:
+                try:
+                    ydl.download([url])
+                except Exception as e:
+                    if self.progress_callback:
+                        self.progress_callback(f"下载失败: {str(e)}")
 
     def progress_hook(self, d):
-        if d['status'] == 'downloading':
-            message = f"下载进度: {d['_percent_str']} 速度: {d['_speed_str']}"
-            print(message)
-            if self.progress_callback:
-                self.progress_callback(message)
-        elif d['status'] == 'finished':
-            message = "下载完成"
-            print(message)
-            if self.progress_callback:
-                self.progress_callback(message)
-
-def run_cli_mode(config):
-    downloader = Downloader(config['download_path'])
-    urls = input("请输入视频链接，每行一个URL，输入完成后按回车：\n").strip().split('\n')
-    downloader.download_videos(urls) 
+        if self.progress_callback:
+            if d['status'] == 'downloading':
+                percent = d.get('_percent_str', 'N/A')
+                speed = d.get('_speed_str', 'N/A')
+                self.progress_callback(f"下载中... {percent} 速度: {speed}")
+            elif d['status'] == 'finished':
+                self.progress_callback("下载完成，正在处理...") 
