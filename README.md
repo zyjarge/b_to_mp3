@@ -1,5 +1,12 @@
 # B站视频下载器
 
+## 声明
+
+**此项目只供学习使用，请尊重视频原创作者的著作权。**
+
+任何使用此项目下载的视频内容均应遵守相关法律法规，不得用于商业用途或其他侵犯版权的行为。请支持正版，尊重创作者的劳动成果。
+
+
 ## 项目简介
 
 这是一个使用Python开发的B站视频下载器，具有图形用户界面（GUI）。它可以从B站下载视频并将其转换为音频格式。
@@ -74,7 +81,4 @@
 
 ## 联系方式
 
-如有任何问题或建议，请通过以下方式联系我：
-
-- 邮箱：your-email@example.com
-- GitHub Issues：[https://github.com/your-username/bilibili-downloader/issues](https://github.com/your-username/bilibili-downloader/issues)
+如有任何问题或建议，请po issue
