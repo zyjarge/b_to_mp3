@@ -3,8 +3,24 @@ import sys
 from yt_dlp import YoutubeDL
 
 def run_cli_mode(config):
-    downloader = Downloader(config['download_path'])
-    urls = input("请输入视频链接，每行一个URL，输入完成后按回车：\n").strip().split('\n')
+    """命令行模式运行下载器"""
+    print("请输入视频链接，每行一个URL，输入完成后按回车：")
+    urls = input().strip().split('\n')
+    urls = [url.strip() for url in urls if url.strip()]
+    
+    if not urls:
+        print("未输入任何URL")
+        return
+        
+    if not config.get('download_path'):
+        print("错误：未设置下载路径")
+        return
+        
+    downloader = Downloader(
+        config['download_path'],
+        config.get('download_type', 'audio'),
+        progress_callback=print  # 使用print作为回调函数
+    )
     downloader.download_videos(urls)
 
 class Downloader:
@@ -17,22 +33,11 @@ class Downloader:
         if not urls:
             return
 
-        # 获取 ffmpeg 路径
-        if getattr(sys, 'frozen', False):
-            # 如果是打包后的应用
-            base_path = sys._MEIPASS
-        else:
-            # 如果是开发环境
-            base_path = os.path.abspath(".")
-
-        ffmpeg_location = os.path.join(base_path, 'ffmpeg')
-        
         # 配置下载选项
         ydl_opts = {
             'format': 'bestaudio/best' if self.download_type == 'audio' else 'best',
             'paths': {'home': self.download_path},
-            'ffmpeg_location': base_path,  # 设置 ffmpeg 路径
-            'progress_hooks': [self.progress_hook] if self.progress_callback else None,
+            'progress_hooks': [self.progress_hook] if self.progress_callback else [],  # 改为空列表而不是None
         }
 
         # 根据下载类型设置后处理器
