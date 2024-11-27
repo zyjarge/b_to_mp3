@@ -43,6 +43,10 @@
    pip install -r requirements.txt
    ```
 
+
+4. 安装ffmpeg，请访问以下链接下载并安装：
+   [ffmpeg下载链接](https://www.ffmpeg.org/download.html)
+
 ## 使用方法
 
 ### GUI 模式
